@@ -1,18 +1,26 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Sweep or sleep action'
+description: 'This action can be used to obtain the remaining Github API quota and act accordingly.'
+author: 'Matthias Zepper'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
+  actionToTake:
+    description: 'Action to take if the API limit is underrun: Sweep (fail) or sleep (wait for quota renewal).'
+    required: false
+    default: 'sweep'
+  quota:
+    description: 'Github API quota to use for the action: One of "core", "search", "graphql", "integration_manifest" or "code_scanning_upload"'
+    required: false
+    default: 'core'
+  lowerBound:
+    description: 'Minimum remaining API requests required to proceed.'
+    required: false
+    default: '50'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  remaining:
+    description: 'Currently remaining requests for the specified quota.'
 
 runs:
   using: node20

@@ -1,28 +1,12 @@
-# Create a JavaScript Action Using TypeScript
+# Sweep or sleep: Check the Github API limit and act on the remaining requests
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
-Use this template to bootstrap the creation of a TypeScript action. :rocket:
+This action can be used to obtain the remaining Github API quota and act accordingly.
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
-
-If you are new, there's also a simpler introduction in the
-[Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
-
-## Create Your Own Action
-
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
-
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
-
-## Initial Setup
+## Development
+### Initial Setup
 
 After you've cloned the repository to your local machine or codespace, you'll
 need to perform some initial setup steps before you can develop your action.
@@ -60,19 +44,9 @@ need to perform some initial setup steps before you can develop your action.
 
    ...
    ```
-
-## Update the Action Metadata
-
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
-
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
-
 ## Update the Action Code
 
-The [`src/`](./src/) directory is the heart of your action! This contains the
+The [`src/`](./src/) directory is the heart of the action! This contains the
 source code that will be run when your action is invoked. You can replace the
 contents of this directory with your own code.
 
