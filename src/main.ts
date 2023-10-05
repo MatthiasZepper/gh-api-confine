@@ -15,10 +15,10 @@ interface Resource {
  */
 export async function run(): Promise<void> {
   try {
-    let lowerBound: number = parseInt(core.getInput('lowerBound')) || 50
-    let actionToTake: string = core.getInput('actionToTake') || 'sweep'
-    let resource: string = core.getInput('resource') || 'core'
-    let token: string =
+    const lowerBound: number = parseInt(core.getInput('lowerBound')) || 50
+    const actionToTake: string = core.getInput('actionToTake') || 'sweep'
+    const resource: string = core.getInput('resource') || 'core'
+    const token: string =
       core.getInput('token') || String(process.env.GITHUB_TOKEN)
 
     // corroborate that resource is one of the valid resource types / quotas:
@@ -68,7 +68,7 @@ export async function run(): Promise<void> {
         )
 
         switch (actionToTake) {
-          case 'sleep':
+          case 'sleep': {
             // calculate the number of seconds until the rate limit resets (getTime() returns milliseconds, the API UTC epoch seconds)
             const seconds_to_reset =
               reset - Math.round(new Date().getTime() / 1000)
@@ -85,6 +85,7 @@ export async function run(): Promise<void> {
 
             core.info(`The API limit has been reset. Farewell!`)
             break
+          }
           default:
             core.setFailed(
               `The API limit of ${resource} was too low to proceed.`
