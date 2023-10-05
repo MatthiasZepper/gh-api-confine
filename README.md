@@ -3,9 +3,11 @@
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
-This action can be used to obtain the remaining Github API quota and act accordingly.
+This action can be used to obtain the remaining Github API quota and act
+accordingly.
 
 ## Development
+
 ### Initial Setup
 
 After you've cloned the repository to your local machine or codespace, you'll
@@ -44,6 +46,7 @@ need to perform some initial setup steps before you can develop your action.
 
    ...
    ```
+
 ## Update the Action Code
 
 The [`src/`](./src/) directory is the heart of the action! This contains the

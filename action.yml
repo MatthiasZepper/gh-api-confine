@@ -1,11 +1,15 @@
 name: 'Sweep or sleep action'
-description: 'This action can be used to obtain the remaining Github API quota and act accordingly.'
+description:
+  'This action can be used to obtain the remaining Github API quota and act
+  accordingly.'
 author: 'Matthias Zepper'
 
 # Define your inputs here.
 inputs:
   actionToTake:
-    description: 'Action to take if the API limit is underrun: Sweep (fail) or sleep (wait for quota renewal).'
+    description:
+      'Action to take if the API limit is underrun: Sweep (fail) or sleep (wait
+      for quota renewal).'
     required: false
     default: 'sweep'
   lowerBound:
@@ -13,7 +17,9 @@ inputs:
     required: false
     default: '50'
   resource:
-    description: 'Github API quota to use for the action: One of "core", "search", "graphql", "integration_manifest" or "code_scanning_upload"'
+    description:
+      'Github API quota to use for the action: One of "core", "search",
+      "graphql", "integration_manifest" or "code_scanning_upload"'
     required: false
     default: 'core'
   token:
