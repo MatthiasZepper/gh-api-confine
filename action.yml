@@ -8,14 +8,18 @@ inputs:
     description: 'Action to take if the API limit is underrun: Sweep (fail) or sleep (wait for quota renewal).'
     required: false
     default: 'sweep'
-  quota:
-    description: 'Github API quota to use for the action: One of "core", "search", "graphql", "integration_manifest" or "code_scanning_upload"'
-    required: false
-    default: 'core'
   lowerBound:
     description: 'Minimum remaining API requests required to proceed.'
     required: false
     default: '50'
+  resource:
+    description: 'Github API quota to use for the action: One of "core", "search", "graphql", "integration_manifest" or "code_scanning_upload"'
+    required: false
+    default: 'core'
+  token:
+    description: 'Github API token to use for the action.'
+    required: false
+    default: '${{ secrets.GITHUB_TOKEN }}'
 
 # Define your outputs here.
 outputs:
