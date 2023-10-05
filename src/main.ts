@@ -55,7 +55,7 @@ export async function run(): Promise<void> {
     if (remaining < 0 || reset < 0) {
       core.setFailed('Github API rateLimit could not be retrieved.')
     } else {
-      core.exportVariable('remaining', remaining)
+      core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining)
       core.setOutput('remaining', remaining)
 
       if (remaining > lowerBound) {

@@ -6,7 +6,6 @@
 export async function sleep(milliseconds: number): Promise<string> {
   return new Promise(resolve => {
     if (isNaN(milliseconds)) {
-      console.warn(milliseconds)
       throw new Error('milliseconds not a number')
     }
 

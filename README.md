@@ -1,17 +1,61 @@
-# Sweep or sleep: Check the Github API limit and act on the remaining requests
+# Sweep or sleep (Github API quota action step)
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
-This action can be used to obtain the remaining Github API quota and act
-accordingly.
+**Sweep or sleep** is a humble Github action step, which allows to easily check your remaining Github API quota and act accordingly. If your balance drops below your specified lower bound, you can kill (sweep) your workflow run or wait (sleep) until your allotment renews. The step will also set a `${GITHUB_REMAINING_API_QUOTA}` environment variable for your convenience.
+
+## Usage
+
+The most simple way to use this action step is within a separate job that precedes the main job. Since the `api_quota_check` job will fail, if your API quota is too low, `some_other_job` will not not even start.
+
+If you set `actionToTake` to _sleep_ instead, the `api_quota_check` will delay it's completion until shortly after the allotted quota renews. This does not guarantee the successful completion of your job (in particular if multiple workflows are running in parallel), but maximizes the chances. Stop wasting your precious API requests on attempting workflow runs that certainly will not succeed.
+
+```yaml
+jobs:
+  api_quota_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: MatthiasZepper/sweep_or_sleep_action
+        id: check_quota
+        with:
+          lowerBound: 20
+          actionToTake: "sweep"
+
+  some_other_job:
+    needs: api_quota_check
+```
+
+Since
+
+```yaml
+jobs:
+  api_quota_check:
+    runs-on: ubuntu-latest
+    outputs:
+      remaining: ${{ steps.check_quota.outputs.remaining }}
+
+    steps:
+      - uses: MatthiasZepper/sweep_or_sleep_action
+        id: check_quota
+        with:
+          lowerBound: 990
+          actionToTake: "sweep"
+
+      - name: Print quota
+        run: echo "Remaining API requests ${{steps.check_quota.outputs.remaining}}"
+
+  some_other_job:
+    needs: api_quota_check
+```
 
 ## Development
 
 ### Initial Setup
 
 After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
+need to perform some initial setup steps:
 
 > [!NOTE]
 >
