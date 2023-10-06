@@ -1,4 +1,4 @@
-name: 'Sweep or sleep action'
+name: 'GitHub API confine'
 description:
   'This action can be used to obtain the remaining Github API quota and act
   accordingly.'
@@ -12,7 +12,7 @@ inputs:
       for quota renewal).'
     required: false
     default: 'sweep'
-  lowerBound:
+  threshold:
     description: 'Minimum remaining API requests required to proceed.'
     required: false
     default: '50'

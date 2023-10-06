@@ -1,9 +1,35 @@
-# Sweep or sleep (Github API quota action step)
+# GH API Confine
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
-**Sweep or sleep** is a humble Github action step, which allows to easily check your remaining Github API quota and act accordingly. If your balance drops below your specified lower bound, you can kill (sweep) your workflow run or wait (sleep) until your allotment renews. The step will also set a `${GITHUB_REMAINING_API_QUOTA}` environment variable for your convenience.
+**GH API Confine** (GitHub API Quota Limiter) is a humble Github action step designed to help you use the GitHub API more effectively.
+
+With **GH API Confine**, you can easily monitor your remaining GitHub API quota and act accordingly. Specify a threshold and either delay or terminate your workflow, if your quota falls below this limit.
+## Features
+
+- **Quota monitoring:** The step keeps track of your GitHub API quota, helping you stay within your allocated limits.
+
+- **Customizable action:** Define how **GH API Confine** should respond when your API quota falls below a specified threshold. Choose between three modes:
+  - **Peep (Observe):** Take no further action beyond checking the quota.
+  - **Sleep (Wait):** Delay the completion of the step until shortly after your API quota renews, maximizing the chances of successful job completion.
+  - **Sweep (Terminate):** Immediately terminate the workflow run to prevent further API usage if your quota is too low.
+
+### Inputs
+
+| Input         | Description                                  | Required| Default |
+|---------------|----------------------------------------------|---------|---------|
+| `actionToTake`         | Select between 'peep', 'sleep' and 'sweep'.                       | No     | sweep   |
+| `threshold`     | Context string to filter the statuses API    | No     |   50      |
+| `resource`| Monitored Github API resource: One of 'core', 'search', 'graphql', 'integration_manifest' or 'code_scanning_upload'    | No      | core     |
+| `token`       | Github API token to use for the action. Defaults to your current one.   | No      | ${{github.token}}     |
+
+
+### Outputs
+
+| Output | Description |
+|--------|-------------|
+| result | Failure or success result of the status |
 
 ## Usage
 

@@ -1,21 +1,24 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "gh-api-confine",
+  "description": "GitHub API confine",
   "version": "0.0.0",
-  "author": "",
+  "author": "Matthias Zepper",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/MatthiasZepper/gh-api-confine",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/MatthiasZepper/gh-api-confine.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/MatthiasZepper/gh-api-confine/issues"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "GitHub",
+    "API",
+    "rate-limiter",
+    "quota",
+    "balance"
   ],
   "exports": {
     ".": "./dist/index.js"
