@@ -15,7 +15,7 @@ interface Resource {
  */
 export async function run(): Promise<void> {
   try {
-    const lowerBound: number = parseInt(core.getInput('lowerBound')) || 50
+    const thresholdAsString: string = core.getInput('threshold') || '10%'
     const actionToTake: string = core.getInput('actionToTake') || 'sweep'
     const resource: string = core.getInput('resource') || 'core'
     const token: string =
@@ -36,6 +36,34 @@ export async function run(): Promise<void> {
       )
     }
 
+    let thresholdAsAbsolute = undefined;
+    let thresholdAsFraction = undefined;
+
+    if (thresholdAsString.endsWith('%')) {
+      thresholdAsFraction = parseFloat(
+        thresholdAsString.slice(0, -1)
+      ) / 100
+      if (thresholdAsFraction <= 0) {
+        core.setFailed(
+          `The threshold must be a positive number, but ${thresholdAsString} was provided.`
+        )
+      }
+    } else {
+      const threshold: number = parseFloat(thresholdAsString) || 0.1
+      if (threshold <= 0) {
+        core.setFailed(
+          `The threshold must be a positive number, but ${thresholdAsString} was provided.`
+        )
+        }
+      // if threshold is smaller than 1, interpret it as a fraction
+      if (threshold < 1) {
+      thresholdAsFraction = threshold
+      } else {
+      thresholdAsAbsolute = threshold
+      }
+    }
+
+
     if (!token) {
       core.setFailed('Please provide a Github token')
     }
@@ -49,8 +77,12 @@ export async function run(): Promise<void> {
     const resourceData: Resource = rateLimit.data.resources[
       resource as keyof typeof rateLimit.data.resources
     ] as Resource
+    const limit: number = resourceData.limit || 1
     const remaining: number = resourceData.remaining || -1
     const reset: number = resourceData.reset || -1
+    // set the cutoff, either from the absolute or relative limit.
+    const cutoff: number = thresholdAsAbsolute || (thresholdAsFraction !== undefined ? Math.ceil(thresholdAsFraction * limit) : 50)
+
 
     if (remaining < 0 || reset < 0) {
       core.setFailed('Github API rateLimit could not be retrieved.')
@@ -58,13 +90,13 @@ export async function run(): Promise<void> {
       core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining)
       core.setOutput('remaining', remaining)
 
-      if (remaining > lowerBound) {
+      if (remaining > cutoff) {
         core.info(
-          `The API limit is plentiful: ${remaining} requests on ${resource} remain.`
+          `The API limit is plentiful: ${remaining} of ${limit} requests on ${resource} remain.`
         )
       } else {
         core.info(
-          `The API limit is dangerously low: ${remaining} requests on ${resource} remain.`
+          `The API limit is too low: ${remaining} of ${limit} requests on ${resource} remain.`
         )
 
         switch (actionToTake) {
@@ -75,7 +107,7 @@ export async function run(): Promise<void> {
             const minutes = Math.floor(seconds_to_reset / 60)
 
             core.info(
-              `The API limit will reset in ${minutes} minutes and ${
+              `The API quota will reset in ${minutes} minutes and ${
                 seconds_to_reset % 60
               } seconds.`
             )
@@ -83,12 +115,15 @@ export async function run(): Promise<void> {
             // sleep n milliseconds + 5 seconds past the reset time to ensure the limit has been reset
             await sleep(seconds_to_reset * 1000 + 5000)
 
-            core.info(`The API limit has been reset. Farewell!`)
+            core.info(`The API quota has been reset to ${limit} requests. Farewell!`)
             break
+          }
+          case 'peep': {
+
           }
           default:
             core.setFailed(
-              `The API limit of ${resource} was too low to proceed.`
+              `Workflow run was cancelled because of a low ${resource} API quota.`
             )
         }
       }

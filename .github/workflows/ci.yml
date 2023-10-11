@@ -50,26 +50,28 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action (sweep)
+      - name: Test Action (sweep)
         id: sweep-test
         uses: ./
         with:
           actionToTake: 'sweep'
-          lowerBound: 50
-          debug: true
+          threshold: 10%
 
       - name: Print Output (sweep)
         id: output-sweep
-        run: echo "${{ steps.sweep-test.outputs.remaining }}"
+        run:
+          echo "${{ steps.sweep-test.outputs.remaining }} API requests were
+          remainig."
 
-      - name: Test Local Action
+      - name: Test Action (sleep)
         id: sleep-test
         uses: ./
         with:
           actionToTake: 'sleep'
-          lowerBound: 1500
-          debug: true
+          threshold: 1500
 
       - name: Print Output (sleep)
         id: output-sleep
-        run: echo "${{ steps.sleep-test.outputs.remaining }}"
+        run:
+          echo "${{ steps.sleep-test.outputs.remaining }} API requests were
+          remaining."

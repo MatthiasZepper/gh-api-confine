@@ -20,7 +20,7 @@ With **GH API Confine**, you can easily monitor your remaining GitHub API quota 
 | Input         | Description                                  | Required| Default |
 |---------------|----------------------------------------------|---------|---------|
 | `actionToTake`         | Select between 'peep', 'sleep' and 'sweep'.                       | No     | sweep   |
-| `threshold`     | Context string to filter the statuses API    | No     |   50      |
+| `threshold`     | The quota minimum to proceed. Decimal numbers in the open interval (0,1) are interpreted as fractions of the resource limit and so are numbers followed by a percentage sign. Any other integers are used as absolute threshold.   Irrelevant if 'peep' was chosen as action.   | No     |   50      |
 | `resource`| Monitored Github API resource: One of 'core', 'search', 'graphql', 'integration_manifest' or 'code_scanning_upload'    | No      | core     |
 | `token`       | Github API token to use for the action. Defaults to your current one.   | No      | ${{github.token}}     |
 
@@ -29,7 +29,8 @@ With **GH API Confine**, you can easily monitor your remaining GitHub API quota 
 
 | Output | Description |
 |--------|-------------|
-| result | Failure or success result of the status |
+| `result` | Failure or success, can be used by downstream steps. |
+| `remaining` | Remaining absolute requests for the specified resource. |
 
 ## Usage
 

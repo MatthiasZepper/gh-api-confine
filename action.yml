@@ -13,9 +13,9 @@ inputs:
     required: false
     default: 'sweep'
   threshold:
-    description: 'Minimum remaining API requests required to proceed.'
+    description: 'API request threshold: Can be given as fraction (0.2 ; 20%) or absolute number (50)'
     required: false
-    default: '50'
+    default: '10%'
   resource:
     description:
       'Github API quota to use for the action: One of "core", "search",
