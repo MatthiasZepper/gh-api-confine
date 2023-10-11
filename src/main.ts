@@ -36,13 +36,11 @@ export async function run(): Promise<void> {
       )
     }
 
-    let thresholdAsAbsolute = undefined;
-    let thresholdAsFraction = undefined;
+    let thresholdAsAbsolute = undefined
+    let thresholdAsFraction = undefined
 
     if (thresholdAsString.endsWith('%')) {
-      thresholdAsFraction = parseFloat(
-        thresholdAsString.slice(0, -1)
-      ) / 100
+      thresholdAsFraction = parseFloat(thresholdAsString.slice(0, -1)) / 100
       if (thresholdAsFraction <= 0) {
         core.setFailed(
           `The threshold must be a positive number, but ${thresholdAsString} was provided.`
@@ -54,15 +52,14 @@ export async function run(): Promise<void> {
         core.setFailed(
           `The threshold must be a positive number, but ${thresholdAsString} was provided.`
         )
-        }
+      }
       // if threshold is smaller than 1, interpret it as a fraction
       if (threshold < 1) {
-      thresholdAsFraction = threshold
+        thresholdAsFraction = threshold
       } else {
-      thresholdAsAbsolute = threshold
+        thresholdAsAbsolute = threshold
       }
     }
-
 
     if (!token) {
       core.setFailed('Please provide a Github token')
@@ -81,8 +78,11 @@ export async function run(): Promise<void> {
     const remaining: number = resourceData.remaining || -1
     const reset: number = resourceData.reset || -1
     // set the cutoff, either from the absolute or relative limit.
-    const cutoff: number = thresholdAsAbsolute || (thresholdAsFraction !== undefined ? Math.ceil(thresholdAsFraction * limit) : 50)
-
+    const cutoff: number =
+      thresholdAsAbsolute ||
+      (thresholdAsFraction !== undefined
+        ? Math.ceil(thresholdAsFraction * limit)
+        : 50)
 
     if (remaining < 0 || reset < 0) {
       core.setFailed('Github API rateLimit could not be retrieved.')
@@ -115,11 +115,13 @@ export async function run(): Promise<void> {
             // sleep n milliseconds + 5 seconds past the reset time to ensure the limit has been reset
             await sleep(seconds_to_reset * 1000 + 5000)
 
-            core.info(`The API quota has been reset to ${limit} requests. Farewell!`)
+            core.info(
+              `The API quota has been reset to ${limit} requests. Farewell!`
+            )
             break
           }
           case 'peep': {
-
+            break
           }
           default:
             core.setFailed(
