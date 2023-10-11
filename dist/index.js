@@ -9631,6 +9631,119 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 7672:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.act = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const sleep_1 = __nccwpck_require__(986);
+async function act(actionToTake, limit, reset, resource) {
+    switch (actionToTake) {
+        case 'sleep': {
+            // calculate the number of seconds until the rate limit resets
+            // (getTime() returns milliseconds, the API UTC epoch seconds)
+            const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000);
+            const minutes = Math.floor(seconds_to_reset / 60);
+            core.info(`The API quota will reset in ${minutes} minutes and ${seconds_to_reset % 60} seconds.`);
+            // sleep n milliseconds + 5 seconds past the reset time to ensure the limit has been reset
+            await (0, sleep_1.sleep)(seconds_to_reset * 1000 + 5000);
+            core.info(`The API quota has been reset to ${limit} requests. Farewell!`);
+            break;
+        }
+        case 'peep': {
+            break;
+        }
+        default:
+            core.setFailed(`Workflow run was cancelled because of a low ${resource} API quota.`);
+    }
+}
+exports.act = act;
+
+
+/***/ }),
+
+/***/ 4966:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fetchRateLimit = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+async function fetchRateLimit(token, resource) {
+    // retrieve the number of remaining API requests
+    const octoKit = github.getOctokit(token);
+    const rateLimit = await octoKit.rest.rateLimit.get();
+    core.debug(JSON.stringify(rateLimit));
+    // retrieve the property of the rateLimit object that corresponds to the resource
+    const resourceData = rateLimit.data.resources[resource];
+    const limit = resourceData.limit || 1;
+    const remaining = resourceData.remaining || -1;
+    const reset = resourceData.reset || -1;
+    if (remaining < 0 || reset < 0) {
+        core.setFailed('Github API rateLimit could not be retrieved.');
+    }
+    else {
+        core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining);
+        core.setOutput('remaining', remaining);
+    }
+    return { limit, remaining, reset };
+}
+exports.fetchRateLimit = fetchRateLimit;
+
+
+/***/ }),
+
 /***/ 399:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -9662,95 +9775,43 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const sleep_1 = __nccwpck_require__(986);
+const action_1 = __nccwpck_require__(7672);
+const validateResource_1 = __nccwpck_require__(5693);
+const processThreshold_1 = __nccwpck_require__(3936);
+const limitFetcher_1 = __nccwpck_require__(4966);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
+        // Get and process the threshold input
         const thresholdAsString = core.getInput('threshold') || '10%';
+        const { thresholdAsAbsolute, thresholdAsFraction } = (0, processThreshold_1.processThreshold)(thresholdAsString);
+        // Get the action input
         const actionToTake = core.getInput('actionToTake') || 'sweep';
+        // Get and validate resource input
         const resource = core.getInput('resource') || 'core';
+        (0, validateResource_1.validateResource)(resource);
+        // Get the token input
         const token = core.getInput('token') || String(process.env.GITHUB_TOKEN);
-        // corroborate that resource is one of the valid resource types / quotas:
-        if (![
-            'core',
-            'search',
-            'graphql',
-            'integration_manifest',
-            'code_scanning_upload'
-        ].includes(resource)) {
-            core.setFailed(`The resource must be either core, graphql, search, integration_manifest, or code_scanning_upload.`);
-        }
-        let thresholdAsAbsolute = undefined;
-        let thresholdAsFraction = undefined;
-        if (thresholdAsString.endsWith('%')) {
-            thresholdAsFraction = parseFloat(thresholdAsString.slice(0, -1)) / 100;
-            if (thresholdAsFraction <= 0) {
-                core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
-            }
-        }
-        else {
-            const threshold = parseFloat(thresholdAsString) || 0.1;
-            if (threshold <= 0) {
-                core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
-            }
-            // if threshold is smaller than 1, interpret it as a fraction
-            if (threshold < 1) {
-                thresholdAsFraction = threshold;
-            }
-            else {
-                thresholdAsAbsolute = threshold;
-            }
-        }
         if (!token) {
             core.setFailed('Please provide a Github token');
         }
-        // retrieve the number of remaining API requests
-        const octoKit = github.getOctokit(token);
-        const rateLimit = await octoKit.rest.rateLimit.get();
-        core.debug(JSON.stringify(rateLimit));
-        // retrieve the property of the rateLimit object that corresponds to the resource
-        const resourceData = rateLimit.data.resources[resource];
-        const limit = resourceData.limit || 1;
-        const remaining = resourceData.remaining || -1;
-        const reset = resourceData.reset || -1;
-        // set the cutoff, either from the absolute or relative limit.
+        // Fetch the remaining requests, the limit as well as time of the next reset.
+        const { limit, remaining, reset } = await (0, limitFetcher_1.fetchRateLimit)(token, resource);
+        // set the cutoff, either from the absolute or relative threshold
         const cutoff = thresholdAsAbsolute ||
             (thresholdAsFraction !== undefined
                 ? Math.ceil(thresholdAsFraction * limit)
                 : 50);
-        if (remaining < 0 || reset < 0) {
-            core.setFailed('Github API rateLimit could not be retrieved.');
+        // corroborate that enough requests remain, otherwise act
+        if (remaining > cutoff) {
+            core.info(`The API quota is plentiful: ${remaining} of ${limit} requests on ${resource} remain.`);
         }
         else {
-            core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining);
-            core.setOutput('remaining', remaining);
-            if (remaining > cutoff) {
-                core.info(`The API limit is plentiful: ${remaining} of ${limit} requests on ${resource} remain.`);
-            }
-            else {
-                core.info(`The API limit is too low: ${remaining} of ${limit} requests on ${resource} remain.`);
-                switch (actionToTake) {
-                    case 'sleep': {
-                        // calculate the number of seconds until the rate limit resets (getTime() returns milliseconds, the API UTC epoch seconds)
-                        const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000);
-                        const minutes = Math.floor(seconds_to_reset / 60);
-                        core.info(`The API quota will reset in ${minutes} minutes and ${seconds_to_reset % 60} seconds.`);
-                        // sleep n milliseconds + 5 seconds past the reset time to ensure the limit has been reset
-                        await (0, sleep_1.sleep)(seconds_to_reset * 1000 + 5000);
-                        core.info(`The API quota has been reset to ${limit} requests. Farewell!`);
-                        break;
-                    }
-                    case 'peep': {
-                        break;
-                    }
-                    default:
-                        core.setFailed(`Workflow run was cancelled because of a low ${resource} API quota.`);
-                }
-            }
+            core.info(`The API quota is below the threshold: ${remaining} of ${limit} requests on ${resource} remain.`);
+            await (0, action_1.act)(actionToTake, limit, reset, resource);
         }
     }
     catch (error) {
@@ -9760,6 +9821,66 @@ async function run() {
     }
 }
 exports.run = run;
+
+
+/***/ }),
+
+/***/ 3936:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processThreshold = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+function processThreshold(thresholdAsString) {
+    let thresholdAsAbsolute = undefined;
+    let thresholdAsFraction = undefined;
+    if (thresholdAsString.endsWith('%')) {
+        thresholdAsFraction = parseFloat(thresholdAsString.slice(0, -1)) / 100;
+        if (thresholdAsFraction <= 0) {
+            core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
+        }
+    }
+    else {
+        const threshold = parseFloat(thresholdAsString) || 0.1;
+        if (threshold <= 0) {
+            core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
+        }
+        // if threshold is smaller than 1, interpret it as a fraction
+        if (threshold < 1) {
+            thresholdAsFraction = threshold;
+        }
+        else {
+            thresholdAsAbsolute = threshold;
+        }
+    }
+    return { thresholdAsAbsolute, thresholdAsFraction };
+}
+exports.processThreshold = processThreshold;
 
 
 /***/ }),
@@ -9785,6 +9906,53 @@ async function sleep(milliseconds) {
     });
 }
 exports.sleep = sleep;
+
+
+/***/ }),
+
+/***/ 5693:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateResource = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+function validateResource(resource) {
+    if (![
+        'core',
+        'search',
+        'graphql',
+        'integration_manifest',
+        'code_scanning_upload'
+    ].includes(resource)) {
+        core.setFailed(`The resource must be either core, graphql, search, integration_manifest, or code_scanning_upload.`);
+    }
+}
+exports.validateResource = validateResource;
 
 
 /***/ }),
