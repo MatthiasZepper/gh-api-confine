@@ -3,9 +3,12 @@
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
-**GH API Confine** (GitHub API Quota Limiter) is a humble Github action step designed to help you use the GitHub API more effectively.
+**GH API Confine** (GitHub API Quota Limiter) is a Github action step designed to help you use the GitHub API more effectively.
 
-With **GH API Confine**, you can easily monitor your remaining GitHub API quota and act accordingly. Specify a threshold and either delay or terminate your workflow, if your quota falls below this limit.
+With **GH API Confine**, you can easily monitor your remaining GitHub API quota and act accordingly. Specify a threshold (relative or absolute) and either delay or terminate your workflow, if your quota falls below the cutoff.
+
+Prepending API-heavy jobs with **GH API Confine** saves your precious API requests for smaller jobs, instead of wasting them on attempting workflow runs that would anyway fail half-way through.
+
 ## Features
 
 - **Quota monitoring:** The step keeps track of your GitHub API quota, helping you stay within your allocated limits.
@@ -15,12 +18,34 @@ With **GH API Confine**, you can easily monitor your remaining GitHub API quota 
   - **Sleep (Wait):** Delay the completion of the step until shortly after your API quota renews, maximizing the chances of successful job completion.
   - **Sweep (Terminate):** Immediately terminate the workflow run to prevent further API usage if your quota is too low.
 
+## Usage
+
+The most simple way to use this action step is within a separate job that precedes the main job. Since the `api_quota_check` job will fail if your API quota is too low, `some_other_job` will not not even start and the workflow run is stopped.
+
+_sweep_ is the default `actionToTake`, so the `with:` specification can be omitted entirely. If you set it to _sleep_ instead, the `api_quota_check` will delay it's completion until shortly after the allotted quota renews. This does not guarantee the successful completion of your job (in particular if multiple workflows are running in parallel), but maximizes the chances.
+
+```yaml
+jobs:
+  api_quota_check:
+    name: Check API quota
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: MatthiasZepper/gh-api-confine
+        with:
+          actionToTake: "sweep"
+
+  some_other_job:
+    runs-on: ubuntu-latest
+    needs: api_quota_check
+```
+
 ### Inputs
 
 | Input         | Description                                  | Required| Default |
 |---------------|----------------------------------------------|---------|---------|
 | `actionToTake`         | Select between 'peep', 'sleep' and 'sweep'.                       | No     | sweep   |
-| `threshold`     | The quota minimum to proceed. Decimal numbers in the open interval (0,1) are interpreted as fractions of the resource limit and so are numbers followed by a percentage sign. Any other integers are used as absolute threshold.   Irrelevant if 'peep' was chosen as action.   | No     |   50      |
+| `threshold`     |  The API request quota minimum. Can be given as fraction of the limit (0.2 ; 20%) or absolute number of requests (50). Percentages or decimal numbers in the open interval (0,1) are interpreted as fractions, other integers as absolute. Irrelevant if 'peep' was chosen as action.   | No     |   10%      |
 | `resource`| Monitored Github API resource: One of 'core', 'search', 'graphql', 'integration_manifest' or 'code_scanning_upload'    | No      | core     |
 | `token`       | Github API token to use for the action. Defaults to your current one.   | No      | ${{github.token}}     |
 
@@ -30,54 +55,106 @@ With **GH API Confine**, you can easily monitor your remaining GitHub API quota 
 | Output | Description |
 |--------|-------------|
 | `result` | Failure or success, can be used by downstream steps. |
-| `remaining` | Remaining absolute requests for the specified resource. |
+| `remaining_abs` | Number of absolute requests that remained for the specified resource. |
+| `remaining_rel` | Relative requests that remained for the specified resource. |
 
-## Usage
+Additionally, the `$GITHUB_REMAINING_API_QUOTA`` environment variable is set.
 
-The most simple way to use this action step is within a separate job that precedes the main job. Since the `api_quota_check` job will fail, if your API quota is too low, `some_other_job` will not not even start.
+### Advanced usage
 
-If you set `actionToTake` to _sleep_ instead, the `api_quota_check` will delay it's completion until shortly after the allotted quota renews. This does not guarantee the successful completion of your job (in particular if multiple workflows are running in parallel), but maximizes the chances. Stop wasting your precious API requests on attempting workflow runs that certainly will not succeed.
+ Only the essential functionality is available as `actionToTake`, but custom [expressions](https://docs.github.com/en/actions/learn-github-actions/expressions) can be used to implement more elaborate workflow logic.
 
-```yaml
+#### Run a subsequent step despite failure
+
+`${{ failure() }}` returns true when any previous step of a job fails. Therefore, the salvage step does not have to be immediately subsequent to **GH API Confine**. Use an `id` and the step's conclusion to run in case of a specific step's failure.
+
+> [!WARNING]
+> Including a salvage step will allow the job as a whole to finish successfully. Thus `some_other_job` would run in the example below, even if the `confine` step failed.
+
+ ```yaml
 jobs:
   api_quota_check:
+    name: Check API quota
     runs-on: ubuntu-latest
 
     steps:
-      - uses: MatthiasZepper/sweep_or_sleep_action
-        id: check_quota
-        with:
-          lowerBound: 20
-          actionToTake: "sweep"
+      - uses: MatthiasZepper/gh-api-confine
+        id: confine
+      - if: ${{ failure() }}
+        run: echo "I will run if any previous step failed!"
+      - if: ${{ failure() && steps.confine.conclusion == 'failure' }}
+        run: echo "I will only run if the 'confine' step failed."
 
   some_other_job:
     needs: api_quota_check
 ```
 
-Since
+#### Hard workflow cancellation
+
+Despite the bold name `sweep`, **GH API Confine** has not the sufficient permissions to actually cancel a running workflow. It just fails the step, which possibly fails the job, which might also fail the whole workflow.
+
+To enforce an immediate workflow cancellation, you will need to issue the respective `gh` commands. Additionally, you must explicitly confer the permissions to interact with your GitHub actions in the job declaration.
+
+ ```yaml
+jobs:
+  api_quota_check:
+    name: Check API quota
+    runs-on: ubuntu-latest
+    permissions:
+      actions: 'write'
+
+    steps:
+      - uses: MatthiasZepper/gh-api-confine
+        id: confine
+      - if: ${{ failure() && steps.confine.conclusion == 'failure' }}
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{github.token}} 
+```
+
+### Monitor API usage
+
+Predicting the number of API requests that a particular step/job will make is difficult, since large returns might be split into multiple requests subject to pagination. Therefore, you can use **GH API Confine** also for monitoring API requests only.
+
+You can [`join`](https://docs.github.com/en/actions/learn-github-actions/expressions#join) the outputs of multiple steps or even export them to JSON.
 
 ```yaml
 jobs:
   api_quota_check:
+    name: Check API quota
     runs-on: ubuntu-latest
     outputs:
-      remaining: ${{ steps.check_quota.outputs.remaining }}
+      remaining:  ${{ join(steps.*.outputs.remaining_abs, ',') }}
 
     steps:
-      - uses: MatthiasZepper/sweep_or_sleep_action
+      - uses: MatthiasZepper/gh-api-confine
         id: check_quota
         with:
-          lowerBound: 990
-          actionToTake: "sweep"
+          actionToTake: "peep"
+      - run: echo "Replace me with a step to monitor"
+      - uses: MatthiasZepper/gh-api-confine
+        id: check_quota_2
+        with:
+          actionToTake: "peep"
+      - run: echo "Replace with another monitored step"
+      - uses: MatthiasZepper/gh-api-confine
+        id: check_quota_3
+        with:
+          actionToTake: "peep"
 
-      - name: Print quota
-        run: echo "Remaining API requests ${{steps.check_quota.outputs.remaining}}"
-
-  some_other_job:
+  monitoring_job:
     needs: api_quota_check
+      - name: Print quota
+        run: echo "Remaining API requests throughout the job: ${{needs.api_quota_check.outputs.remaining}}"
 ```
 
 ## Development
+
+I gladly welcome suggestions for improvement, bug reports and code contributions to this project. If you'd like to contribute code, the best way to get started is to create a personal fork of this repository. Subsequently, use a new branch to develop your feature or contribute your bug fix.
+
+Once you're ready, simply open a pull request to the dev branch and I'll happily review your changes. Thanks for your interest in contributing!
 
 ### Initial Setup
 
@@ -95,104 +172,43 @@ need to perform some initial setup steps:
 
 1. :hammer_and_wrench: Install the dependencies
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 1. :building_construction: Package the TypeScript for distribution
 
-   ```bash
-   npm run bundle
-   ```
+```bash
+npm run bundle
+```
 
-1. :white_check_mark: Run the tests
+### Update the Action Code
 
-   ```bash
-   $ npm test
+The [`src/`](./src/) directory is the heart of this action. It contains the
+source code that will be run when your action is invoked. Create a new branch and edit the contents of `src/`. Format, test, and build the action
 
-   PASS  ./index.test.js
-     ✓ throws invalid number (3ms)
-     ✓ wait 500 ms (504ms)
-     ✓ test runs (95ms)
+```bash
+npm run all
+```
 
-   ...
-   ```
+> [!WARNING]
+>
+> This step is important! It will run [`ncc`](https://github.com/vercel/ncc)
+> to build the final JavaScript action code with all dependencies included.
+> If you do not run this step, your action will not work correctly when it is
+> used in a workflow. This step also includes the `--license` option for
+> `ncc`, which will create a license file for all of the production node
+> modules used in your project.
 
-## Update the Action Code
+Commit your changes and push them to the repository:
 
-The [`src/`](./src/) directory is the heart of the action! This contains the
-source code that will be run when your action is invoked. You can replace the
-contents of this directory with your own code.
+```bash
+git add .
+git commit -m "My first contribution is ready!"
+git push
+```
 
-There are a few things to keep in mind when writing your action code:
-
-- Most GitHub Actions toolkit and CI/CD operations are processed asynchronously.
-  In `main.ts`, you will see that the action is run in an `async` function.
-
-  ```javascript
-  import * as core from '@actions/core'
-  //...
-
-  async function run() {
-    try {
-      //...
-    } catch (error) {
-      core.setFailed(error.message)
-    }
-  }
-  ```
-
-  For more information about the GitHub Actions toolkit, see the
-  [documentation](https://github.com/actions/toolkit/blob/master/README.md).
-
-So, what are you waiting for? Go ahead and start customizing your action!
-
-1. Create a new branch
-
-   ```bash
-   git checkout -b releases/v1
-   ```
-
-1. Replace the contents of `src/` with your action code
-1. Add tests to `__tests__/` for your source code
-1. Format, test, and build the action
-
-   ```bash
-   npm run all
-   ```
-
-   > [!WARNING]
-   >
-   > This step is important! It will run [`ncc`](https://github.com/vercel/ncc)
-   > to build the final JavaScript action code with all dependencies included.
-   > If you do not run this step, your action will not work correctly when it is
-   > used in a workflow. This step also includes the `--license` option for
-   > `ncc`, which will create a license file for all of the production node
-   > modules used in your project.
-
-1. Commit your changes
-
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
-
-1. Push them to your repository
-
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
+### Validate the updated Action
 
 You can now validate the action by referencing it in a workflow file. For
 example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
@@ -204,44 +220,9 @@ steps:
     id: checkout
     uses: actions/checkout@v3
 
-  - name: Test Local Action
+  - name: Test the action locally
     id: test-action
     uses: ./
     with:
-      milliseconds: 1000
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
-```
-
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/typescript-action/actions)! :rocket:
-
-## Usage
-
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
-
-```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v3
-
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+      actionToTake: "peep"
 ```

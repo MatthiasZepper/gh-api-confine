@@ -8,12 +8,12 @@ author: 'Matthias Zepper'
 inputs:
   actionToTake:
     description:
-      'Action to take if the API limit is underrun: Sweep (fail) or sleep (wait
+      'Action to take if the threshold is underrun: Sweep (fail) or sleep (wait
       for quota renewal).'
     required: false
     default: 'sweep'
   threshold:
-    description: 'API request threshold: Can be given as fraction (0.2 ; 20%) or absolute number (50)'
+    description: 'API request threshold: Can be given as fraction of the limit (0.2 ; 20%) or absolute number of requests (50)'
     required: false
     default: '10%'
   resource:
@@ -30,7 +30,7 @@ inputs:
 # Define your outputs here.
 outputs:
   remaining:
-    description: 'Currently remaining requests for the specified quota.'
+    description: 'Remaining requests for the specified quota when queried.'
 
 runs:
   using: node20
