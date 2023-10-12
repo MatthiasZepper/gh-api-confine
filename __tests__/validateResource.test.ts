@@ -12,32 +12,32 @@ jest.mock('@actions/core', () => ({
 }));
 
 describe('validateResource.ts', () => {
-  it('Accepts core as valid input', async () => {
+  it('accepts core as valid input', async () => {
     validateResource('core');
     expect(core.setFailed).not.toHaveBeenCalled();
   })
 
-  it('Accepts graphql as valid input', async () => {
+  it('accepts graphql as valid input', async () => {
     validateResource('graphql');
     expect(core.setFailed).not.toHaveBeenCalled();
   })
 
-  it('Accepts search as valid input', async () => {
+  it('accepts search as valid input', async () => {
     validateResource('search');
     expect(core.setFailed).not.toHaveBeenCalled();
   })
 
-  it('Accepts integration_manifest as valid input', async () => {
+  it('accepts integration_manifest as valid input', async () => {
     validateResource('integration_manifest');
     expect(core.setFailed).not.toHaveBeenCalled();
   })
 
-  it('Accepts code_scanning_upload as valid input', async () => {
+  it('accepts code_scanning_upload as valid input', async () => {
     validateResource('code_scanning_upload');
     expect(core.setFailed).not.toHaveBeenCalled();
   })
 
-  it('Fails the step for an invalid resource', () => {
+  it('fails the step for an invalid resource', () => {
     validateResource('invalid_resource');
     expect(core.setFailed).toHaveBeenCalledWith(
       'The resource must be either core, graphql, search, integration_manifest, or code_scanning_upload.'
