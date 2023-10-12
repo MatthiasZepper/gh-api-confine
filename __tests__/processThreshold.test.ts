@@ -51,6 +51,17 @@ describe('processThreshold.ts', () => {
     expect(result.thresholdAsFraction).toBeUndefined();
   });
 
+  it('should set an error for an invalid threshold (negative percent)', () => {
+    const thresholdAsString = '-30%';
+    const result = processThreshold(thresholdAsString);
+    
+    expect(core.setFailed).toHaveBeenCalledWith(
+      'The threshold must be a positive number, but -30% was provided.'
+    );
+    expect(result.thresholdAsAbsolute).toBeUndefined();
+    expect(result.thresholdAsFraction).toBeUndefined();
+  });
+
   it('should handle invalid input (not a number)', () => {
     const thresholdAsString = 'invalid';
     const result = processThreshold(thresholdAsString);
@@ -68,6 +79,6 @@ describe('processThreshold.ts', () => {
     
     expect(core.setFailed).not.toHaveBeenCalled();
     expect(result.thresholdAsAbsolute).toBeUndefined();
-    expect(result.thresholdAsFraction).toBe(50);
+    expect(result.thresholdAsFraction).toBe(0.5);
   });
 })

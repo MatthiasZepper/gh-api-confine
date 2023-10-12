@@ -15,7 +15,7 @@ export function processThreshold(thresholdAsString: string): {
       )
     }
   } else {
-    const threshold: number = parseFloat(thresholdAsString) || 0.1
+    const threshold: number = parseFloat(thresholdAsString) || 0
     if (threshold <= 0) {
       core.setFailed(
         `The threshold must be a positive number, but ${thresholdAsString} was provided.`
