@@ -58,7 +58,7 @@ jobs:
 | `remaining_abs` | Number of absolute requests that remained for the specified resource. |
 | `remaining_rel` | Relative requests that remained for the specified resource. |
 
-Additionally, the `$GITHUB_REMAINING_API_QUOTA`` environment variable is set.
+Additionally, the `$GITHUB_REMAINING_API_QUOTA` environment variable is set.
 
 ### Advanced usage
 
@@ -182,7 +182,7 @@ npm install
 npm run bundle
 ```
 
-### Update the Action Code
+### Update the code
 
 The [`src/`](./src/) directory is the heart of this action. It contains the
 source code that will be run when your action is invoked. Create a new branch and edit the contents of `src/`. Format, test, and build the action
@@ -208,7 +208,7 @@ git commit -m "My first contribution is ready!"
 git push
 ```
 
-### Validate the updated Action
+### Validate the updated action
 
 You can now validate the action by referencing it in a workflow file. For
 example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
