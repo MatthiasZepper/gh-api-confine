@@ -19,6 +19,7 @@ jest.mock('@actions/github', () => ({
   getOctokit: jest.fn()
 }));
 
+// Mock the rateLimit.get function from '@actions/github'
 
 jest.mock('@actions/github', () => {
   const originalModule = jest.requireActual('@actions/github');
@@ -33,9 +34,15 @@ jest.mock('@actions/github', () => {
             resources: {
               core: {
                 limit: 5000,
-                remaining: 4900,
-                reset: 1635052800,
-                used: 100,
+                remaining: 4300,
+                reset: 1696896000,
+                used: 700,
+              },        
+              search: {
+                limit: 30,
+                remaining: 18,
+                reset: 1696896400,
+                used: 12,
               },
             },
           },
@@ -61,8 +68,8 @@ describe('limitFetcher.ts', () => {
     expect(result.reset).toBe(1696896000);
 
     expect(core.debug).toHaveBeenCalled();
-    expect(core.setOutput).toHaveBeenCalledWith(result.remaining);
-    expect(core.setOutput).toHaveBeenCalledWith(result.remaining/result.limit);
+    expect(core.setOutput).toHaveBeenCalledWith("remaining_abs", 4300);
+    expect(core.setOutput).toHaveBeenCalledWith("remaining_rel", 0.86);
   });
 
   it('should fetch and return the search rate limit', async () => {
@@ -78,13 +85,9 @@ describe('limitFetcher.ts', () => {
   });
 
   it('should set a failed message on API error', async () => {
-    // Mock the GitHub API to return an error (e.g., 404 Not Found)
-    nock('https://api.github.com')
-      .get('/rate_limit')
-      .reply(404);
 
     const token = 'some_fake_github_token';
-    const resource = 'core';
+    const resource = 'tux_awesomeness'; // this resource has no limits
 
     await fetchRateLimit(token, resource);
 
