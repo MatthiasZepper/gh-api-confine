@@ -18,6 +18,12 @@ export async function run(): Promise<void> {
     // Get the action input
     const actionToTake: string = core.getInput('actionToTake') || 'sweep'
 
+    //Get and validate the delay input
+    const delay: number = parseInt(core.getInput('delay')) || -1
+    if (delay < 0 && actionToTake === 'sleep') {
+      throw new Error('Delay must be a positive number')
+    }
+
     // Get and validate resource input
     const resource: string = core.getInput('resource') || 'core'
     validateResource(resource)
@@ -26,7 +32,7 @@ export async function run(): Promise<void> {
     const token: string =
       core.getInput('token') || String(process.env.GITHUB_TOKEN)
     if (!token) {
-      core.setFailed('Please provide a Github token')
+      throw new Error('Please provide a Github token')
     }
 
     // Fetch the remaining requests, the limit as well as time of the next reset.
@@ -48,7 +54,7 @@ export async function run(): Promise<void> {
       core.info(
         `The API quota is below the threshold: ${remaining} of ${limit} requests on ${resource} remain.`
       )
-      await act(actionToTake, limit, reset, resource)
+      await act(actionToTake, limit, reset, delay, resource)
     }
   } catch (error) {
     // Fail the workflow run if an error occurs

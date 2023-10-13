@@ -16,6 +16,10 @@ inputs:
     description: 'API request threshold: Can be given as fraction of the limit (0.2 ; 20%) or absolute number of requests (50)'
     required: false
     default: '10%'
+  delay:
+    description: 'Additional delay in seconds to wait after the API quota reset.'
+    required: false
+    default: '1'
   resource:
     description:
       'Github API quota to use for the action: One of "core", "search",
