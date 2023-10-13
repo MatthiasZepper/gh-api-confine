@@ -9,38 +9,45 @@ import { expect } from '@jest/globals'
 
 // Mock the setFailed function from '@actions/core'
 jest.mock('@actions/core', () => ({
+  debug: jest.fn(),
+  exportVariable: jest.fn(),
   setFailed: jest.fn(),
+  setOutput: jest.fn(),
 }));
 
-describe('limitFetcher.ts', () => {
-  beforeAll(() => {
-    // Set up a mock for the GitHub API
-    nock('https://api.github.com')
-      .get('/rate_limit')
-      .reply(200, {
-        data: {
-          resources: {
-            core: {
-              limit: 5000,
-              remaining: 4300,
-              reset: 1696896000,
-              used: 700,
-            },        
-            search: {
-              limit: 30,
-              remaining: 18,
-              reset: 1696896400,
-              used: 12,
+jest.mock('@actions/github', () => ({
+  getOctokit: jest.fn()
+}));
+
+
+jest.mock('@actions/github', () => {
+  const originalModule = jest.requireActual('@actions/github');
+  return {
+    ...originalModule,
+    getOctokit: (token: String) => {
+      const octoKitInstance = originalModule.getOctokit(token);
+      octoKitInstance.rest.rateLimit.get = async () => {
+        // Return a Promise with the expected data structure
+        return Promise.resolve({
+          data: {
+            resources: {
+              core: {
+                limit: 5000,
+                remaining: 4900,
+                reset: 1635052800,
+                used: 100,
+              },
             },
           },
-        },
-      });
-  });
+        });
+      };
+      return octoKitInstance;
+    },
+  };
+});
 
-  afterAll(() => {
-    // Clean up the nock mocks
-    nock.cleanAll();
-  });
+
+describe('limitFetcher.ts', () => {
 
   it('should fetch and return the core rate limit', async () => {
     const token = 'some_fake_github_token';
@@ -52,6 +59,10 @@ describe('limitFetcher.ts', () => {
     expect(result.limit).toBe(5000);
     expect(result.remaining).toBe(4300);
     expect(result.reset).toBe(1696896000);
+
+    expect(core.debug).toHaveBeenCalled();
+    expect(core.setOutput).toHaveBeenCalledWith(result.remaining);
+    expect(core.setOutput).toHaveBeenCalledWith(result.remaining/result.limit);
   });
 
   it('should fetch and return the search rate limit', async () => {

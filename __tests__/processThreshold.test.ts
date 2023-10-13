@@ -2,7 +2,6 @@
  * Unit tests for src/processThreshold.ts
  */
 
-import * as core from '@actions/core'
 import { processThreshold } from '../src/processThreshold';
 import { expect } from '@jest/globals'
 
