@@ -70,9 +70,6 @@ Additionally, the `$GITHUB_REMAINING_API_QUOTA` environment variable is set.
 
 `${{ failure() }}` returns true when any previous step of a job fails. Therefore, the salvage step does not have to be immediately subsequent to **GH API Confine**. Use an `id` and the step's conclusion to run in case of a specific step's failure.
 
-> [!WARNING]
-> Including a salvage step will allow the job as a whole to finish successfully. Thus `some_other_job` would run in the example below, even if the `confine` step failed.
-
  ```yaml
 jobs:
   api_quota_check:
@@ -87,8 +84,6 @@ jobs:
       - if: ${{ failure() && steps.confine.conclusion == 'failure' }}
         run: echo "I will only run if the 'confine' step failed."
 
-  some_other_job:
-    needs: api_quota_check
 ```
 
 #### Hard workflow cancellation
