@@ -9801,7 +9801,7 @@ async function run() {
         //Get and validate the alarm and delay inputs
         const alarm = parseInt(core.getInput('alarm')) || -1;
         const delay = parseInt(core.getInput('delay')) || -1;
-        if (alarm > 0 && actionToTake === 'sleep') {
+        if (alarm <= 0 && actionToTake === 'sleep') {
             throw new Error('Alarm must be a positive number');
         }
         if (delay < 0 && actionToTake === 'sleep') {
@@ -9812,9 +9812,6 @@ async function run() {
         (0, validateResource_1.validateResource)(resource);
         // Get the token input
         const token = core.getInput('token') || String(process.env.GITHUB_TOKEN);
-        if (!token) {
-            throw new Error('Please provide a Github token');
-        }
         // Fetch the remaining requests, the limit as well as time of the next reset.
         const { limit, remaining, reset } = await (0, limitFetcher_1.fetchRateLimit)(token, resource);
         // set the cutoff, either from the absolute or relative threshold

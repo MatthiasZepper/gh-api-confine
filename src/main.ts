@@ -21,7 +21,8 @@ export async function run(): Promise<void> {
     //Get and validate the alarm and delay inputs
     const alarm: number = parseInt(core.getInput('alarm')) || -1
     const delay: number = parseInt(core.getInput('delay')) || -1
-    if (alarm > 0 && actionToTake === 'sleep') {
+
+    if (alarm <= 0 && actionToTake === 'sleep') {
       throw new Error('Alarm must be a positive number')
     }
     if (delay < 0 && actionToTake === 'sleep') {
@@ -35,9 +36,6 @@ export async function run(): Promise<void> {
     // Get the token input
     const token: string =
       core.getInput('token') || String(process.env.GITHUB_TOKEN)
-    if (!token) {
-      throw new Error('Please provide a Github token')
-    }
 
     // Fetch the remaining requests, the limit as well as time of the next reset.
     const { limit, remaining, reset } = await fetchRateLimit(token, resource)

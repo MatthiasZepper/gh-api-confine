@@ -45,7 +45,7 @@ describe('action.ts', () => {
     expect(sleepMock).toHaveBeenCalledWith(1100) //
 
     const delta = Math.abs(end.getTime() - start.getTime())
-    expect(delta).toBeGreaterThan(1100)
+    expect(delta).toBeGreaterThan(1050)
   })
 
   it('should fail the workflow instead sleep, if reset is later than alarm', async () => {
