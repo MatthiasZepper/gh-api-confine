@@ -93,10 +93,11 @@ jobs:
         with:
           actionToTake: 'sleep'
           threshold: 1500
+          alarm: 3700
 
       - name: Print Output (sleep)
         if: ${{ failure() && steps.sleep-test.conclusion == 'failure' }}
         id: output-sleep
         run:
-          echo "${{ steps.sleep-test.outputs.remaining }} API requests were
-          remaining."
+          echo "${{ steps.sleep-test.outputs.remaining_abs }} API requests (${{
+          steps.sleep-test.outputs.remaining_rel}}) were remaining."
