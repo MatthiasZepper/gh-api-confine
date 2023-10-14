@@ -15,7 +15,7 @@ Prepending API-heavy jobs with **GH API Confine** saves your precious API reques
 
 - **Customizable action:** Define how **GH API Confine** should respond when your API quota falls below a specified threshold. Choose between three modes:
   - **Peep (Observe):** Take no further action beyond checking the quota.
-  - **Sleep (Wait):** Delay the completion of the step until shortly after your API quota renews, maximizing the chances of successful job completion.
+  - **Sleep (Wait):** Delay the completion of the step until shortly after your API quota renews, maximizing the chances of successful job completion. Set the `alarm` input to limit the maximum sleep time to go easy on your Github spending.
   - **Sweep (Terminate):** Immediately terminate the workflow run to prevent further API usage if your quota is too low.
 
 ## Usage
@@ -47,6 +47,7 @@ jobs:
 | `actionToTake`         | Select between 'peep', 'sleep' and 'sweep'.                       | No     | sweep   |
 | `threshold`     |  The API request quota minimum. Can be given as fraction of the limit (0.2 ; 20%) or absolute number of requests (50). Percentages or decimal numbers in the open interval (0,1) are interpreted as fractions, other integers as absolute. Irrelevant if 'peep' was chosen as action.   | No     |   10%      |
 | `delay`| If 'sleep' is set as `actionToTake`, _oversleep_ the quota reset by an additional delay of n seconds. | No      | 1    |
+| `alarm`| Limit the maximum time to 'sleep' by setting an figurative alarm clock. If no earlier quota reset occurs, sweep instead. | No      | 1800    |
 | `resource`| Monitored Github API resource: One of 'core', 'search', 'graphql', 'integration_manifest' or 'code_scanning_upload'    | No      | core     |
 | `token`       | Github API token to use for the action. Defaults to your current one.   | No      | ${{github.token}}     |
 
@@ -212,7 +213,7 @@ git push
 ### Validate the updated action
 
 You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
+example, [`check-dist-and-action.yml`](./.github/workflows/check-dist-and-action.yml) demonstrates how to reference an
 action in the same repository.
 
 ```yaml

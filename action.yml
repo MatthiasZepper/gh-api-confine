@@ -20,6 +20,10 @@ inputs:
     description: 'Additional delay in seconds to wait after the API quota reset.'
     required: false
     default: '1'
+  alarm:
+    description: 'Set an figurative alarm clock for the maximum time in seconds to sleep. If no earlier API reset happens, sweep instead.'
+    required: false
+    default: '1800'
   resource:
     description:
       'Github API quota to use for the action: One of "core", "search",

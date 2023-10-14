@@ -18,8 +18,12 @@ export async function run(): Promise<void> {
     // Get the action input
     const actionToTake: string = core.getInput('actionToTake') || 'sweep'
 
-    //Get and validate the delay input
+    //Get and validate the alarm and delay inputs
+    const alarm: number = parseInt(core.getInput('alarm')) || -1
     const delay: number = parseInt(core.getInput('delay')) || -1
+    if (alarm > 0 && actionToTake === 'sleep') {
+      throw new Error('Alarm must be a positive number')
+    }
     if (delay < 0 && actionToTake === 'sleep') {
       throw new Error('Delay must be a positive number')
     }
@@ -54,7 +58,7 @@ export async function run(): Promise<void> {
       core.info(
         `The API quota is below the threshold: ${remaining} of ${limit} requests on ${resource} remain.`
       )
-      await act(actionToTake, limit, reset, delay, resource)
+      await act(actionToTake, limit, reset, alarm, delay, resource)
     }
   } catch (error) {
     // Fail the workflow run if an error occurs

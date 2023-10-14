@@ -9663,17 +9663,23 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.act = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const sleep_1 = __nccwpck_require__(986);
-async function act(actionToTake, limit, reset, resource) {
+async function act(actionToTake, limit, reset, alarm, delay, resource) {
     switch (actionToTake) {
         case 'sleep': {
             // calculate the number of seconds until the rate limit resets
             // (getTime() returns milliseconds, the API UTC epoch seconds)
             const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000);
-            const minutes = Math.floor(seconds_to_reset / 60);
-            core.info(`The API quota will reset in ${minutes} minutes and ${seconds_to_reset % 60} seconds.`);
-            // sleep n milliseconds + 5 seconds past the reset time to ensure the limit has been reset
-            await (0, sleep_1.sleep)(seconds_to_reset * 1000 + 5000);
-            core.info(`The API quota has been reset to ${limit} requests. Farewell!`);
+            const minutes_to_reset = Math.floor(seconds_to_reset / 60);
+            const minutes_alarm = Math.floor(alarm / 60);
+            core.info(`The API quota will reset in ${minutes_to_reset} minutes and ${seconds_to_reset % 60} seconds.`);
+            if (seconds_to_reset < alarm) {
+                // sleep n milliseconds + delay past the reset time to ensure the limit has been reset
+                await (0, sleep_1.sleep)((seconds_to_reset + delay) * 1000);
+                core.info(`The API quota has been reset to ${limit} requests. Farewell!`);
+            }
+            else {
+                core.setFailed(`Your alarm set to ${minutes_alarm} minutes and ${alarm % 60} seconds went off: Sleep is overrated.`);
+            }
             break;
         }
         case 'peep': {
@@ -9727,15 +9733,17 @@ async function fetchRateLimit(token, resource) {
     core.debug(JSON.stringify(rateLimit));
     // retrieve the property of the rateLimit object that corresponds to the resource
     const resourceData = rateLimit.data.resources[resource];
-    const limit = resourceData.limit || 1;
-    const remaining = resourceData.remaining || -1;
-    const reset = resourceData.reset || -1;
-    if (remaining < 0 || reset < 0) {
+    // Provide default values for the properties
+    const limit = resourceData?.limit || -1;
+    const remaining = resourceData?.remaining || -1;
+    const reset = resourceData?.reset || -1;
+    if (limit < 0 || remaining < 0 || reset < 0) {
         core.setFailed('Github API rateLimit could not be retrieved.');
     }
     else {
         core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining);
-        core.setOutput('remaining', remaining);
+        core.setOutput('remaining_abs', remaining);
+        core.setOutput('remaining_rel', Math.round((remaining / limit) * 100) / 100);
     }
     return { limit, remaining, reset };
 }
@@ -9790,13 +9798,22 @@ async function run() {
         const { thresholdAsAbsolute, thresholdAsFraction } = (0, processThreshold_1.processThreshold)(thresholdAsString);
         // Get the action input
         const actionToTake = core.getInput('actionToTake') || 'sweep';
+        //Get and validate the alarm and delay inputs
+        const alarm = parseInt(core.getInput('alarm')) || -1;
+        const delay = parseInt(core.getInput('delay')) || -1;
+        if (alarm > 0 && actionToTake === 'sleep') {
+            throw new Error('Alarm must be a positive number');
+        }
+        if (delay < 0 && actionToTake === 'sleep') {
+            throw new Error('Delay must be a positive number');
+        }
         // Get and validate resource input
         const resource = core.getInput('resource') || 'core';
         (0, validateResource_1.validateResource)(resource);
         // Get the token input
         const token = core.getInput('token') || String(process.env.GITHUB_TOKEN);
         if (!token) {
-            core.setFailed('Please provide a Github token');
+            throw new Error('Please provide a Github token');
         }
         // Fetch the remaining requests, the limit as well as time of the next reset.
         const { limit, remaining, reset } = await (0, limitFetcher_1.fetchRateLimit)(token, resource);
@@ -9811,7 +9828,7 @@ async function run() {
         }
         else {
             core.info(`The API quota is below the threshold: ${remaining} of ${limit} requests on ${resource} remain.`);
-            await (0, action_1.act)(actionToTake, limit, reset, resource);
+            await (0, action_1.act)(actionToTake, limit, reset, alarm, delay, resource);
         }
     }
     catch (error) {
@@ -9826,56 +9843,33 @@ exports.run = run;
 /***/ }),
 
 /***/ 3936:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.processThreshold = void 0;
-const core = __importStar(__nccwpck_require__(2186));
 function processThreshold(thresholdAsString) {
     let thresholdAsAbsolute = undefined;
     let thresholdAsFraction = undefined;
+    const valueError = `The threshold must be a positive number, but ${thresholdAsString} was provided.`;
     if (thresholdAsString.endsWith('%')) {
         thresholdAsFraction = parseFloat(thresholdAsString.slice(0, -1)) / 100;
         if (thresholdAsFraction <= 0) {
-            core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
+            throw new Error(valueError);
         }
     }
     else {
-        const threshold = parseFloat(thresholdAsString) || 0.1;
-        if (threshold <= 0) {
-            core.setFailed(`The threshold must be a positive number, but ${thresholdAsString} was provided.`);
-        }
+        const threshold = parseFloat(thresholdAsString) || 0;
         // if threshold is smaller than 1, interpret it as a fraction
         if (threshold < 1) {
             thresholdAsFraction = threshold;
         }
         else {
             thresholdAsAbsolute = threshold;
+        }
+        if (threshold <= 0) {
+            throw new Error(valueError);
         }
     }
     return { thresholdAsAbsolute, thresholdAsFraction };
@@ -9911,36 +9905,12 @@ exports.sleep = sleep;
 /***/ }),
 
 /***/ 5693:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateResource = void 0;
-const core = __importStar(__nccwpck_require__(2186));
 function validateResource(resource) {
     if (![
         'core',
@@ -9949,7 +9919,7 @@ function validateResource(resource) {
         'integration_manifest',
         'code_scanning_upload'
     ].includes(resource)) {
-        core.setFailed(`The resource must be either core, graphql, search, integration_manifest, or code_scanning_upload.`);
+        throw new Error(`The resource must be either core, graphql, search, integration_manifest, or code_scanning_upload.`);
     }
 }
 exports.validateResource = validateResource;

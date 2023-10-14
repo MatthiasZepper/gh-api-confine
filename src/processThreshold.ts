@@ -1,5 +1,3 @@
-import * as core from '@actions/core'
-
 export function processThreshold(thresholdAsString: string): {
   thresholdAsAbsolute: number | undefined
   thresholdAsFraction: number | undefined
@@ -18,15 +16,14 @@ export function processThreshold(thresholdAsString: string): {
 
     // if threshold is smaller than 1, interpret it as a fraction
     if (threshold < 1) {
-        thresholdAsFraction = threshold
-      } else {
-        thresholdAsAbsolute = threshold
+      thresholdAsFraction = threshold
+    } else {
+      thresholdAsAbsolute = threshold
     }
 
     if (threshold <= 0) {
       throw new Error(valueError)
     }
-
   }
   return { thresholdAsAbsolute, thresholdAsFraction }
 }

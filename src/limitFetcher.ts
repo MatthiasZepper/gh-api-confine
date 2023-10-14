@@ -22,17 +22,17 @@ export async function fetchRateLimit(
     resource as keyof typeof rateLimit.data.resources
   ] as Resource
 
-    // Provide default values for the properties
-  const limit: number = resourceData?.limit || -1;
-  const remaining: number = resourceData?.remaining || -1;
-  const reset: number = resourceData?.reset || -1;
+  // Provide default values for the properties
+  const limit: number = resourceData?.limit || -1
+  const remaining: number = resourceData?.remaining || -1
+  const reset: number = resourceData?.reset || -1
 
   if (limit < 0 || remaining < 0 || reset < 0) {
     core.setFailed('Github API rateLimit could not be retrieved.')
   } else {
     core.exportVariable('GITHUB_REMAINING_API_QUOTA', remaining)
     core.setOutput('remaining_abs', remaining)
-    core.setOutput('remaining_rel', Math.round(remaining / limit * 100) / 100)
+    core.setOutput('remaining_rel', Math.round((remaining / limit) * 100) / 100)
   }
-    return { limit, remaining, reset }
+  return { limit, remaining, reset }
 }
