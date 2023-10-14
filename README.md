@@ -126,17 +126,20 @@ jobs:
       remaining:  ${{ join(steps.*.outputs.remaining_abs, ',') }}
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine
+      - name: Monitoring API step I
+        uses: MatthiasZepper/gh-api-confine
         id: check_quota
         with:
           actionToTake: "peep"
       - run: echo "Replace me with a step to monitor"
-      - uses: MatthiasZepper/gh-api-confine
+      - name: Monitoring API step II
+        uses: MatthiasZepper/gh-api-confine
         id: check_quota_2
         with:
           actionToTake: "peep"
       - run: echo "Replace with another monitored step"
-      - uses: MatthiasZepper/gh-api-confine
+      - name: Monitoring API step III
+        uses: MatthiasZepper/gh-api-confine
         id: check_quota_3
         with:
           actionToTake: "peep"
