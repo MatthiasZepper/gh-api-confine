@@ -9,12 +9,13 @@ export async function act(
   delay: number,
   resource: string
 ): Promise<void> {
+  // calculate the number of seconds until the rate limit resets
+  // (getTime() returns milliseconds, the API UTC epoch seconds)
+  const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000)
+  const minutes_to_reset = Math.floor(seconds_to_reset / 60)
+
   switch (actionToTake) {
     case 'sleep': {
-      // calculate the number of seconds until the rate limit resets
-      // (getTime() returns milliseconds, the API UTC epoch seconds)
-      const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000)
-      const minutes_to_reset = Math.floor(seconds_to_reset / 60)
       const minutes_alarm = Math.floor(alarm / 60)
 
       core.info(
@@ -39,6 +40,11 @@ export async function act(
       break
     }
     case 'peep': {
+      core.info(
+        `The API quota will reset in ${minutes_to_reset} minutes and ${
+          seconds_to_reset % 60
+        } seconds.`
+      )
       break
     }
     default:

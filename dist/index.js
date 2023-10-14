@@ -9664,12 +9664,12 @@ exports.act = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const sleep_1 = __nccwpck_require__(986);
 async function act(actionToTake, limit, reset, alarm, delay, resource) {
+    // calculate the number of seconds until the rate limit resets
+    // (getTime() returns milliseconds, the API UTC epoch seconds)
+    const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000);
+    const minutes_to_reset = Math.floor(seconds_to_reset / 60);
     switch (actionToTake) {
         case 'sleep': {
-            // calculate the number of seconds until the rate limit resets
-            // (getTime() returns milliseconds, the API UTC epoch seconds)
-            const seconds_to_reset = reset - Math.round(new Date().getTime() / 1000);
-            const minutes_to_reset = Math.floor(seconds_to_reset / 60);
             const minutes_alarm = Math.floor(alarm / 60);
             core.info(`The API quota will reset in ${minutes_to_reset} minutes and ${seconds_to_reset % 60} seconds.`);
             if (seconds_to_reset < alarm) {
@@ -9683,6 +9683,7 @@ async function act(actionToTake, limit, reset, alarm, delay, resource) {
             break;
         }
         case 'peep': {
+            core.info(`The API quota will reset in ${minutes_to_reset} minutes and ${seconds_to_reset % 60} seconds.`);
             break;
         }
         default:

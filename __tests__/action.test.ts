@@ -82,7 +82,7 @@ describe('action.ts', () => {
   it('should do nothing for the "peep" action', async () => {
     const actionToTake = 'peep'
     const limit = 5000
-    const reset = Math.round(new Date().getTime() / 1000) + 0.1
+    const reset = Math.round(new Date().getTime() / 1000) + 0.5
     const alarm = 900
     const delay = 0.1
     const resource = 'core'
@@ -91,7 +91,9 @@ describe('action.ts', () => {
     const start = new Date()
     act(actionToTake, limit, reset, alarm, delay, resource)
     const end = new Date()
-    expect(core.info).not.toHaveBeenCalled()
+    expect(core.info).toHaveBeenCalledWith(
+      'The API quota will reset in 0 minutes and 0.5 seconds.'
+    )
     expect(core.setFailed).not.toHaveBeenCalled()
 
     const delta = Math.abs(end.getTime() - start.getTime())
