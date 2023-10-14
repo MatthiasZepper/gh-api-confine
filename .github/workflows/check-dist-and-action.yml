@@ -95,6 +95,7 @@ jobs:
           threshold: 1500
 
       - name: Print Output (sleep)
+        if: ${{ failure() && steps.sleep-test.conclusion == 'failure' }}
         id: output-sleep
         run:
           echo "${{ steps.sleep-test.outputs.remaining }} API requests were
