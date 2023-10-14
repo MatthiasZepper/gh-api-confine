@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine
+      - uses: MatthiasZepper/gh-api-confine@beta
         with:
           actionToTake: "sweep"
 
@@ -46,11 +46,10 @@ jobs:
 |---------------|----------------------------------------------|---------|---------|
 | `actionToTake`         | Select between 'peep', 'sleep' and 'sweep'.                       | No     | sweep   |
 | `threshold`     |  The API request quota minimum. Can be given as fraction of the limit (0.2 ; 20%) or absolute number of requests (50). Percentages or decimal numbers in the open interval (0,1) are interpreted as fractions, other integers as absolute. Irrelevant if 'peep' was chosen as action.   | No     |   10%      |
-| `delay`| If 'sleep' is set as `actionToTake`, _oversleep_ the quota reset by an additional delay of n seconds. | No      | 1    |
-| `alarm`| Limit the maximum time to 'sleep' by setting an figurative alarm clock. If no earlier quota reset occurs, sweep instead. | No      | 1800    |
+| `delay`| If 'sleep' is set as `actionToTake`, _oversleep_ the quota reset by an additional delay of `n` seconds. | No      | 1    |
+| `alarm`| Limit the maximum time to 'sleep' by setting an figurative alarm clock to `n` seconds. If no earlier quota reset occurs, sweep instead. | No      | 1800    |
 | `resource`| Monitored Github API resource: One of 'core', 'search', 'graphql', 'integration_manifest' or 'code_scanning_upload'    | No      | core     |
 | `token`       | Github API token to use for the action. Defaults to your current one.   | No      | ${{github.token}}     |
-
 
 ### Outputs
 
@@ -77,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine
+      - uses: MatthiasZepper/gh-api-confine@beta
         id: confine
       - if: ${{ failure() }}
         run: echo "I will run if any previous step failed!"
@@ -101,7 +100,7 @@ jobs:
       actions: 'write'
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine
+      - uses: MatthiasZepper/gh-api-confine@beta
         id: confine
       - if: ${{ failure() && steps.confine.conclusion == 'failure' }}
         run: |
@@ -127,19 +126,19 @@ jobs:
 
     steps:
       - name: Monitoring API step I
-        uses: MatthiasZepper/gh-api-confine
+        uses: MatthiasZepper/gh-api-confine@beta
         id: check_quota
         with:
           actionToTake: "peep"
       - run: echo "Replace me with a step to monitor"
       - name: Monitoring API step II
-        uses: MatthiasZepper/gh-api-confine
+        uses: MatthiasZepper/gh-api-confine@beta
         id: check_quota_2
         with:
           actionToTake: "peep"
       - run: echo "Replace with another monitored step"
       - name: Monitoring API step III
-        uses: MatthiasZepper/gh-api-confine
+        uses: MatthiasZepper/gh-api-confine@beta
         id: check_quota_3
         with:
           actionToTake: "peep"

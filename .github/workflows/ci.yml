@@ -7,6 +7,8 @@ on:
     branches:
       - main
       - 'releases/*'
+    paths-ignore:
+        - '**.md'
 
 jobs:
   test-typescript:
