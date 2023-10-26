@@ -1,5 +1,6 @@
 # GH API Confine
 
+![Licence](https://img.shields.io/github/license/matthiaszepper/gh-api-confine)
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 
@@ -31,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine@beta
+      - uses: MatthiasZepper/gh-api-confine@v1
         with:
           actionToTake: "sweep"
 
@@ -76,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine@beta
+      - uses: MatthiasZepper/gh-api-confine@v1
         id: confine
       - if: ${{ failure() }}
         run: echo "I will run if any previous step failed!"
@@ -100,7 +101,7 @@ jobs:
       actions: 'write'
 
     steps:
-      - uses: MatthiasZepper/gh-api-confine@beta
+      - uses: MatthiasZepper/gh-api-confine@v1
         id: confine
       - if: ${{ failure() && steps.confine.conclusion == 'failure' }}
         run: |
@@ -126,19 +127,19 @@ jobs:
 
     steps:
       - name: Monitoring API step I
-        uses: MatthiasZepper/gh-api-confine@beta
+        uses: MatthiasZepper/gh-api-confine@v1
         id: check_quota
         with:
           actionToTake: "peep"
       - run: echo "Replace me with a step to monitor"
       - name: Monitoring API step II
-        uses: MatthiasZepper/gh-api-confine@beta
+        uses: MatthiasZepper/gh-api-confine@v1
         id: check_quota_2
         with:
           actionToTake: "peep"
       - run: echo "Replace with another monitored step"
       - name: Monitoring API step III
-        uses: MatthiasZepper/gh-api-confine@beta
+        uses: MatthiasZepper/gh-api-confine@v1
         id: check_quota_3
         with:
           actionToTake: "peep"
@@ -217,7 +218,7 @@ action in the same repository.
 steps:
   - name: Checkout
     id: checkout
-    uses: actions/checkout@v3
+    uses: actions/checkout@v4
 
   - name: Test the action locally
     id: test-action

@@ -87,6 +87,13 @@ jobs:
           echo "${{ steps.sweep-test.outputs.remaining }} API requests were
           remainig."
 
+      - name: Print Output (sweep failure)
+        if: ${{ failure() && steps.sweep-test.conclusion == 'failure' }}
+        id: output-sweep-failure
+        run:
+          echo "${{ steps.sweep-test.outputs.remaining_abs }} API requests
+          (${{steps.sweep-test.outputs.remaining_rel}}) were remaining."
+
       - name: Test Action (sleep)
         id: sleep-test
         uses: ./
@@ -96,8 +103,14 @@ jobs:
           alarm: 3700
 
       - name: Print Output (sleep)
-        if: ${{ failure() && steps.sleep-test.conclusion == 'failure' }}
         id: output-sleep
         run:
-          echo "${{ steps.sleep-test.outputs.remaining_abs }} API requests (${{
-          steps.sleep-test.outputs.remaining_rel}}) were remaining."
+          echo "${{ steps.sleep-test.outputs.remaining }} API requests were
+          remainig."
+
+      - name: Print Output (sleep failure)
+        if: ${{ failure() && steps.sleep-test.conclusion == 'failure' }}
+        id: output-sleep-failure
+        run:
+          echo "${{ steps.sleep-test.outputs.remaining_abs }} API requests
+          (${{steps.sleep-test.outputs.remaining_rel}}) were remaining."
