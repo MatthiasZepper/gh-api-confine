@@ -64,11 +64,11 @@ jobs:
 
 Additionally, the `$GITHUB_REMAINING_API_QUOTA` environment variable is set.
 
-### Advanced usage
+## Advanced usage
 
  Only the essential functionality is available as `actionToTake`, but custom [expressions](https://docs.github.com/en/actions/learn-github-actions/expressions) can be used to implement more elaborate workflow logic.
 
-#### Run a subsequent step despite failure
+### Run a subsequent step despite failure
 
 `${{ failure() }}` returns true when any previous step of a job fails. Therefore, the salvage step does not have to be immediately subsequent to **GH API Confine**. Use an `id` and the step's conclusion to run in case of a specific step's failure.
 
@@ -88,7 +88,7 @@ jobs:
 
 ```
 
-#### Hard workflow cancellation
+### Hard workflow cancellation
 
 Despite the bold name `sweep`, **GH API Confine** has not the sufficient permissions to actually cancel a running workflow. It just fails the step, which possibly fails the job, which might also fail the whole workflow.
 
@@ -148,8 +148,13 @@ jobs:
 
   monitoring_job:
     needs: api_quota_check
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Print quota
-        run: echo "Remaining API requests throughout the job: ${{needs.api_quota_check.outputs.remaining}}"
+        run:
+          echo "Remaining API requests throughout the job
+          ${{needs.api_quota_check.outputs.remaining}}"
 ```
 
 ## Development

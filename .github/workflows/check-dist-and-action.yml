@@ -68,6 +68,8 @@ jobs:
     needs: check-dist
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    outputs:
+      remaining: ${{ join(steps.*.outputs.remaining_abs, ',') }}
 
     steps:
       - name: Checkout
@@ -84,8 +86,8 @@ jobs:
       - name: Print Output (sweep)
         id: output-sweep
         run:
-          echo "${{ steps.sweep-test.outputs.remaining }} API requests were
-          remainig."
+          echo "${{ steps.sweep-test.outputs.remaining_abs }} API requests
+          (${{steps.sweep-test.outputs.remaining_rel}}) were remaining."
 
       - name: Print Output (sweep failure)
         if: ${{ failure() && steps.sweep-test.conclusion == 'failure' }}
@@ -105,8 +107,8 @@ jobs:
       - name: Print Output (sleep)
         id: output-sleep
         run:
-          echo "${{ steps.sleep-test.outputs.remaining }} API requests were
-          remainig."
+          echo "${{ steps.sweep-test.outputs.remaining_abs }} API requests
+          (${{steps.sweep-test.outputs.remaining_rel}}) were remaining."
 
       - name: Print Output (sleep failure)
         if: ${{ failure() && steps.sleep-test.conclusion == 'failure' }}
@@ -114,3 +116,13 @@ jobs:
         run:
           echo "${{ steps.sleep-test.outputs.remaining_abs }} API requests
           (${{steps.sleep-test.outputs.remaining_rel}}) were remaining."
+
+  monitoring_job:
+    needs: test-action
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print quota
+        run:
+          echo "Remaining API requests throughout the job
+          ${{needs.test-action.outputs.remaining}}"
