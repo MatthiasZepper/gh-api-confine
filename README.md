@@ -12,6 +12,8 @@ Prepending API-heavy jobs with **GH API Confine** saves your precious API reques
 
 ## Features
 
+![You are going too fast! F. Murray Abraham alias Antonio Salieri, from the film Amadeus (1984)](badges/toofast.webp)
+
 - **Quota monitoring:** The step keeps track of your GitHub API quota, helping you stay within your allocated limits.
 
 - **Customizable action:** Define how **GH API Confine** should respond when your API quota falls below a specified threshold. Choose between three modes:
