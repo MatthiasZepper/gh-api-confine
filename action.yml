@@ -3,6 +3,9 @@ description:
   'This action can be used to obtain the remaining Github API quota and act
   accordingly.'
 author: 'Matthias Zepper'
+branding:
+  icon: "upload-cloud"
+  color: "gray-dark"
 
 # Define your inputs here.
 inputs:
