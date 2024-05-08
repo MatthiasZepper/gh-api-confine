@@ -6,7 +6,8 @@ updates:
       - dependabot
       - actions
     schedule:
-      interval: daily
+      interval: monthly
+    target-branch: "dev"
 
   - package-ecosystem: npm
     directory: /
@@ -14,4 +15,10 @@ updates:
       - dependabot
       - npm
     schedule:
-      interval: daily
+      interval: monthly
+    target-branch: "dev"
+    groups:
+      patches:
+        update-types:
+        - "minor"
+        - "patch"
